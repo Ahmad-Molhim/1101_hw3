@@ -1,0 +1,7 @@
+StudentID: 
+
+Clock period: (ns)
+
+Area :  (um^2)
+
+Use DesignWare? (Yes/No) 
