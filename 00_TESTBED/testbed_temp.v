@@ -112,8 +112,8 @@ module testbed;
   // Waveform
   // ----------------------------------------------
   initial begin
-    $fsdbDumpfile("ipdc.fsdb");
-    $fsdbDumpvars(3, "+mda");
+    $dumpfile("ipdc.vcd");
+    $dumpvars(0, testbed);
   end
 
   // ----------------------------------------------

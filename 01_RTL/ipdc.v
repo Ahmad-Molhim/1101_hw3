@@ -532,19 +532,36 @@ module ipdc (  //Don't modify interface
             end
           end  // Scale Down
 
-          4'b1001: begin  // Scale Down
-            if (prev_image_size == 2'b00) begin  // 16x16 -> 8x8, display 2x2
-              down_org_row = eff_org_row_pos >> 1;
-              down_org_col = eff_org_col_pos >> 1;
+          4'b1001: begin  // Scale Up
+            // already at 16x16: no enlargement, just output current 4x4 display
+            if (prev_image_size == 2'b00) begin
+              o_out_data_w  = Image[prev_org_row_pos + prev_pixel_row_count]
+                         [prev_org_col_pos + prev_pixel_col_count];
+              o_out_valid_w = 1'b1;
 
-              for (r = 0; r < 8; r = r + 1) begin
-                for (c = 0; c < 8; c = c + 1) begin
-                  scaled_8x8[r][c] = Image[(r<<1)+prev_org_row_pos[0]][(c<<1)+prev_org_col_pos[0]];
+              if (prev_pixel_col_count < 3'd3) begin
+                pixel_col_count = prev_pixel_col_count + 3'd1;
+                pixel_row_count = prev_pixel_row_count;
+              end else begin
+                pixel_col_count = 3'd0;
+                if (prev_pixel_row_count < 3'd3) begin
+                  pixel_row_count = prev_pixel_row_count + 3'd1;
+                end else begin
+                  pixel_row_count = 3'd0;
+                  finish_pending  = 1'b1;
+                  image_size      = 2'b00;
                 end
               end
 
-              o_out_data_w  = scaled_8x8[down_org_row + prev_pixel_row_count]
-                              [down_org_col + prev_pixel_col_count];
+            end else if (prev_image_size == 2'b11) begin  // 4x4 -> 8x8, output 2x2
+              up_org_row = eff_org_row_pos << 1;
+              up_org_col = eff_org_col_pos << 1;
+
+              if (up_org_row > 4'd6) up_org_row = 4'd6;
+              if (up_org_col > 4'd6) up_org_col = 4'd6;
+
+              o_out_data_w  = scaled_8x8[up_org_row + prev_pixel_row_count]
+                              [up_org_col + prev_pixel_col_count];
               o_out_valid_w = 1'b1;
 
               if (prev_pixel_col_count < 3'd1) begin
@@ -561,25 +578,33 @@ module ipdc (  //Don't modify interface
                 end
               end
 
-            end else if (prev_image_size == 2'b01) begin  // 8x8 -> 4x4, display 1x1
-              down_org_row = eff_org_row_pos >> 1;
-              down_org_col = eff_org_col_pos >> 1;
+            end else if (prev_image_size == 2'b01) begin  // 8x8 -> 16x16, output 4x4
+              up_org_row = eff_org_row_pos << 1;
+              up_org_col = eff_org_col_pos << 1;
 
-              for (r = 0; r < 4; r = r + 1) begin
-                for (c = 0; c < 4; c = c + 1) begin
-                  scaled_4x4[r][c] = scaled_8x8[(r << 1) + eff_org_row_pos[0]]
-                                     [(c << 1) + eff_org_col_pos[0]];
+              if (up_org_row > 4'd12) up_org_row = 4'd12;
+              if (up_org_col > 4'd12) up_org_col = 4'd12;
+
+              o_out_data_w  = Image[up_org_row + prev_pixel_row_count]
+                         [up_org_col + prev_pixel_col_count];
+              o_out_valid_w = 1'b1;
+
+              if (prev_pixel_col_count < 3'd3) begin
+                pixel_col_count = prev_pixel_col_count + 3'd1;
+                pixel_row_count = prev_pixel_row_count;
+              end else begin
+                pixel_col_count = 3'd0;
+                if (prev_pixel_row_count < 3'd3) begin
+                  pixel_row_count = prev_pixel_row_count + 3'd1;
+                end else begin
+                  pixel_row_count = 3'd0;
+                  finish_pending  = 1'b1;
+                  image_size      = 2'b00;
                 end
               end
-
-              o_out_data_w    = scaled_4x4[down_org_row][down_org_col];
-              o_out_valid_w   = 1'b1;
-              pixel_row_count = 3'd0;
-              pixel_col_count = 3'd0;
-              finish_pending  = 1'b1;
-              image_size      = 2'b11;
             end
-          end  // Scale Up
+          end
+
           4'b1100: begin
 
             if (prev_image_size == 2'b00) disp_max = 3;  // 4x4 output
