@@ -134,7 +134,7 @@ module ipdc (  //Don't modify interface
   always @(*) begin
     eff_org_row_pos = 4'd0;
     eff_org_col_pos = 4'd0;
-    case (image_size)
+    case (prev_image_size)
       2'b00: begin  // 16x16
         eff_org_row_pos = prev_org_row_pos;
         eff_org_col_pos = prev_org_col_pos;
@@ -245,7 +245,7 @@ module ipdc (  //Don't modify interface
                   image_size = 2'b00;
                 end
               end
-            end else if (prev_image_size == 2'b01) begin
+            end else if (prev_image_size == 2'b01) begin  //8x8
               shifted_org_row = eff_org_row_pos;
               shifted_org_col = (eff_org_col_pos < 4'd6) ? (eff_org_col_pos + 4'd1) : 4'd6;
 
@@ -265,25 +265,28 @@ module ipdc (  //Don't modify interface
                   pixel_row_count = 3'd0;
                   finish_pending = 1'b1;
                   op_busy = 1'b0;
-                  org_col_pos = shifted_org_col << 1;
-                  org_row_pos = shifted_org_row << 1;
+                  org_row_pos = prev_org_row_pos;
+                  if (eff_org_col_pos < 4'd6) org_col_pos = prev_org_col_pos + 4'd2;
+                  else org_col_pos = prev_org_col_pos;
                   image_size = 2'b01;
                 end
               end
-            end else if (prev_image_size == 2'b11) begin
+            end else if (prev_image_size == 2'b11) begin  // 4x4
               shifted_org_row = eff_org_row_pos;
               shifted_org_col = (eff_org_col_pos < 4'd3) ? eff_org_col_pos + 4'd1 : 4'd3;
 
-              src_row = shifted_org_row + prev_pixel_row_count;
-              src_col = shifted_org_col + prev_pixel_col_count;
+              src_row         = shifted_org_row + prev_pixel_row_count;
+              src_col         = shifted_org_col + prev_pixel_col_count;
 
-              o_out_data_w = scaled_4x4[src_row][src_col];
-              o_out_valid_w = 1'b1;
-              finish_pending = 1'b1;
-              op_busy = 1'b0;
-              image_size = 2'b11;
-              org_col_pos = shifted_org_col << 2;
-              org_row_pos = shifted_org_row << 2;
+              o_out_data_w    = scaled_4x4[src_row][src_col];
+              o_out_valid_w   = 1'b1;
+              finish_pending  = 1'b1;
+              op_busy         = 1'b0;
+              image_size      = 2'b11;
+
+              org_row_pos     = prev_org_row_pos;
+              if (eff_org_col_pos < 4'd3) org_col_pos = prev_org_col_pos + 4'd4;
+              else org_col_pos = prev_org_col_pos;
             end
           end  //Shift Origin Right
 
@@ -333,8 +336,9 @@ module ipdc (  //Don't modify interface
                   finish_pending = 1'b1;
                   op_busy = 1'b0;
                   pixel_row_count = 3'd0;
-                  org_col_pos = shifted_org_col << 1;
-                  org_row_pos = shifted_org_row << 1;
+                  org_row_pos = prev_org_row_pos;
+                  if (eff_org_col_pos > 4'd0) org_col_pos = prev_org_col_pos - 4'd2;
+                  else org_col_pos = prev_org_col_pos;
                   image_size = 2'b01;
                 end
               end
@@ -351,8 +355,9 @@ module ipdc (  //Don't modify interface
               finish_pending = 1'b1;
               op_busy = 1'b0;
               image_size = 2'b11;
-              org_col_pos = shifted_org_col << 2;
-              org_row_pos = shifted_org_row << 2;
+              org_row_pos = prev_org_row_pos;
+              if (eff_org_col_pos > 4'd0) org_col_pos = prev_org_col_pos - 4'd4;
+              else org_col_pos = prev_org_col_pos;
             end
           end  // Shift Origin Left
 
@@ -401,8 +406,9 @@ module ipdc (  //Don't modify interface
                   finish_pending = 1'b1;
                   op_busy = 1'b0;
                   pixel_row_count = 3'd0;
-                  org_col_pos = shifted_org_col << 1;
-                  org_row_pos = shifted_org_row << 1;
+                  org_col_pos = prev_org_col_pos;
+                  if (eff_org_row_pos > 4'd0) org_row_pos = prev_org_row_pos - 4'd2;
+                  else org_row_pos = prev_org_row_pos;
                   image_size = 2'b01;
                 end
               end
@@ -417,8 +423,9 @@ module ipdc (  //Don't modify interface
 
               finish_pending = 1'b1;
               op_busy = 1'b0;
-              org_col_pos = shifted_org_col << 2;
-              org_row_pos = shifted_org_row << 2;
+              org_col_pos = prev_org_col_pos;
+              if (eff_org_row_pos > 4'd0) org_row_pos = prev_org_row_pos - 4'd4;
+              else org_row_pos = prev_org_row_pos;
               image_size = 2'b11;
             end
           end  // Shift Origin Up
@@ -469,8 +476,9 @@ module ipdc (  //Don't modify interface
                   finish_pending = 1'b1;
                   op_busy = 1'b0;
                   pixel_row_count = 3'd0;
-                  org_col_pos = shifted_org_col << 1;
-                  org_row_pos = shifted_org_row << 1;
+                  org_col_pos = prev_org_col_pos;
+                  if (eff_org_row_pos < 4'd6) org_row_pos = prev_org_row_pos + 4'd2;
+                  else org_row_pos = prev_org_row_pos;
                   image_size = 2'b01;
                 end
               end
@@ -486,8 +494,9 @@ module ipdc (  //Don't modify interface
               finish_pending = 1'b1;
               op_busy = 1'b0;
               image_size = 2'b11;
-              org_col_pos = shifted_org_col << 2;
-              org_row_pos = shifted_org_row << 2;
+              org_col_pos = prev_org_col_pos;
+              if (eff_org_row_pos < 4'd3) org_row_pos = prev_org_row_pos + 4'd4;
+              else org_row_pos = prev_org_row_pos;
             end
           end  // Shift Origin Down
 
@@ -525,15 +534,19 @@ module ipdc (  //Don't modify interface
                   scaled_4x4[r][c] = scaled_8x8[(r<<1)+eff_org_row_pos[0]][(c<<1)+eff_org_col_pos[0]];
                 end
               end
-              o_out_data_w = scaled_4x4[down_org_row][down_org_col];  //fix origin
+              o_out_data_w = scaled_4x4[down_org_row][down_org_col];
+              o_out_valid_w = 1'b1;
+              finish_pending = 1'b1;
+              image_size = 2'b11;
+            end else if (image_size == 2'b11) begin
+              o_out_data_w = scaled_4x4[eff_org_row_pos][eff_org_col_pos];
               o_out_valid_w = 1'b1;
               finish_pending = 1'b1;
               image_size = 2'b11;
             end
           end  // Scale Down
 
-          4'b1001: begin  // Scale Up
-            // already at 16x16: no enlargement, just output current 4x4 display
+          4'b1001: begin
             if (prev_image_size == 2'b00) begin
               o_out_data_w  = Image[prev_org_row_pos + prev_pixel_row_count]
                          [prev_org_col_pos + prev_pixel_col_count];
@@ -552,10 +565,9 @@ module ipdc (  //Don't modify interface
                   image_size      = 2'b00;
                 end
               end
-
             end else if (prev_image_size == 2'b11) begin  // 4x4 -> 8x8, output 2x2
-              up_org_row = eff_org_row_pos << 1;
-              up_org_col = eff_org_col_pos << 1;
+              up_org_row = prev_org_row_pos >> 1;
+              up_org_col = prev_org_col_pos >> 1;
 
               if (up_org_row > 4'd6) up_org_row = 4'd6;
               if (up_org_col > 4'd6) up_org_col = 4'd6;
@@ -566,7 +578,6 @@ module ipdc (  //Don't modify interface
 
               if (prev_pixel_col_count < 3'd1) begin
                 pixel_col_count = prev_pixel_col_count + 3'd1;
-                pixel_row_count = prev_pixel_row_count;
               end else begin
                 pixel_col_count = 3'd0;
                 if (prev_pixel_row_count < 3'd1) begin
@@ -577,16 +588,12 @@ module ipdc (  //Don't modify interface
                   image_size      = 2'b01;
                 end
               end
-
             end else if (prev_image_size == 2'b01) begin  // 8x8 -> 16x16, output 4x4
-              up_org_row = eff_org_row_pos << 1;
-              up_org_col = eff_org_col_pos << 1;
-
-              if (up_org_row > 4'd12) up_org_row = 4'd12;
-              if (up_org_col > 4'd12) up_org_col = 4'd12;
+              up_org_row = (prev_org_row_pos > 4'd12) ? 4'd12 : prev_org_row_pos;
+              up_org_col = (prev_org_col_pos > 4'd12) ? 4'd12 : prev_org_col_pos;
 
               o_out_data_w  = Image[up_org_row + prev_pixel_row_count]
-                         [up_org_col + prev_pixel_col_count];
+                       [up_org_col + prev_pixel_col_count];
               o_out_valid_w = 1'b1;
 
               if (prev_pixel_col_count < 3'd3) begin
@@ -603,7 +610,7 @@ module ipdc (  //Don't modify interface
                 end
               end
             end
-          end
+          end  // Scale Up
 
           4'b1100: begin
 
@@ -711,7 +718,7 @@ module ipdc (  //Don't modify interface
                   pixel_row_count = prev_pixel_row_count + 3'd1;
                 end else begin
                   pixel_row_count = 3'd0;
-                  o_op_ready_w    = 1'b1;
+                  finish_pending  = 1'b1;
                 end
               end
             end else if (prev_image_size == 2'b01) begin

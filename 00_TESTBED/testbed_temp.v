@@ -3,7 +3,9 @@
 
 
 
+
 `define HCYCLE (`CYCLE/2)
+
 
 
 
@@ -11,7 +13,9 @@
 
 
 
+
 `define RST_DELAY 2
+
 
 
 
@@ -21,11 +25,14 @@
 
 
 
+
 `define OPFILE "../00_TESTBED/PATTERN/opmode1.dat"
 
 
 
+
 `define GOLDEN "../00_TESTBED/PATTERN/golden1.dat"
+
 
 
 
@@ -34,11 +41,14 @@
 
 
 
+
 `define OPFILE "../00_TESTBED/PATTERN/opmode2.dat"
 
 
 
+
 `define GOLDEN "../00_TESTBED/PATTERN/golden2.dat"
+
 
 
 
@@ -47,11 +57,14 @@
 
 
 
+
 `define OPFILE "../00_TESTBED/PATTERN/opmode3.dat"
 
 
 
+
 `define GOLDEN "../00_TESTBED/PATTERN/golden3.dat"
+
 
 
 
@@ -60,7 +73,9 @@
 
 
 
+
 `define OPFILE "../00_TESTBED/PATTERN/opmode0.dat"
+
 
 
 
@@ -68,9 +83,11 @@
 
 
 
+
 `endif
 
 `define SDFFILE "ipdc_syn.sdf"
+
 
 
 
@@ -112,10 +129,19 @@ module testbed;
   // Waveform
   // ----------------------------------------------
   initial begin
-    $dumpfile("ipdc.vcd");
+`ifdef tb0
+    $dumpfile("ipdc_tb0.vcd");
+`elsif tb1
+    $dumpfile("ipdc_tb1.vcd");
+`elsif tb2
+    $dumpfile("ipdc_tb2.vcd");
+`elsif tb3
+    $dumpfile("ipdc_tb3.vcd");
+`else
+    $dumpfile("ipdc_default.vcd");
+`endif
     $dumpvars(0, testbed);
   end
-
   // ----------------------------------------------
   // DUT
   // ----------------------------------------------
@@ -333,7 +359,9 @@ module testbed;
 
     $display("--------------------------------------------------");
     if (error_cnt == 0) begin
-      $display("PASS");
+      $display("----------------------------------------------");
+      $display("-                 ALL PASS!                  -");
+      $display("----------------------------------------------");
       $display("  operations checked : %0d", num_ops);
       $display("  golden pixels      : %0d", num_golden);
     end else begin
